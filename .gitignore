@@ -11,13 +11,21 @@ ENV/
 env.bak/
 venv.bak/
 
-# Environment variables
+# Environment variables (backend only)
 .env
 .env.local
 .env.*.local
 *.env
 backend/.env
 backend_python/.env
+
+# Angular environment files (contain API keys)
+src/environments/environment.ts
+src/environments/environment.prod.ts
+
+# Keep the template file in Git
+!src/environments/environment.template.ts
+
 
 # Angular
 .angular/
