@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 import { EventsService } from '../../../../core/services/events.service';
-import { DashboardService } from '../../../../core/services/dashboard.service';
+import { LucideAngularModule, TrendingUp, Users, Calendar, Activity, Filter, Eye, Sparkles, Loader2, ArrowUp, ArrowDown } from 'lucide-angular';
 
 interface AnalyticsData {
   totalEvents: number;
@@ -19,7 +19,7 @@ interface AnalyticsData {
 @Component({
   selector: 'app-analytics',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, LucideAngularModule],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.css'
 })
@@ -30,11 +30,22 @@ export class AnalyticsComponent implements OnInit {
   error: string | null = null;
   user: any = null;
 
+  // Icons
+  readonly TrendingUpIcon = TrendingUp;
+  readonly UsersIcon = Users;
+  readonly CalendarIcon = Calendar;
+  readonly ActivityIcon = Activity;
+  readonly FilterIcon = Filter;
+  readonly EyeIcon = Eye;
+  readonly SparklesIcon = Sparkles;
+  readonly Loader2Icon = Loader2;
+  readonly ArrowUpIcon = ArrowUp;
+  readonly ArrowDownIcon = ArrowDown;
+
   constructor(
     private router: Router,
     private authService: AuthService,
-    private eventsService: EventsService,
-    private dashboardService: DashboardService
+    private eventsService: EventsService
   ) { }
 
   async ngOnInit() {

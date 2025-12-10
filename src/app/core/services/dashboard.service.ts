@@ -91,7 +91,7 @@ export class DashboardService {
 
             // Filter active registrations
             const activeRegistrations = (registrations || []).filter((r: any) =>
-                !r.status || r.status === 'registered' || r.status === 'attended'
+                !r.status || r.status === 'registered' || r.status === 'confirmed' || r.status === 'attended'
             );
 
             const registeredEvents = activeRegistrations.length;
@@ -279,7 +279,7 @@ export class DashboardService {
                 if (regError) throw regError;
 
                 const activeRegistrations = (registrations || []).filter((r: any) =>
-                    !r.status || r.status === 'registered' || r.status === 'attended'
+                    !r.status || r.status === 'registered' || r.status === 'confirmed' || r.status === 'attended'
                 );
 
                 events = activeRegistrations

@@ -1,0 +1,183 @@
+<div *ngIf="loading" class="flex items-center justify-center min-h-screen">
+    <div class="text-center">
+        <svg class="animate-spin h-12 w-12 text-primary-600 mx-auto mb-4" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+        </svg>
+        <p class="text-gray-600">Loading admin dashboard...</p>
+    </div>
+</div>
+
+<div *ngIf="!loading && !isAdmin" class="flex items-center justify-center min-h-screen">
+    <div class="text-center">
+        <lucide-icon [img]="ShieldIcon" class="h-16 w-16 text-red-500 mx-auto mb-4"></lucide-icon>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
+        <p class="text-gray-600">You don't have permission to access the admin panel.</p>
+    </div>
+</div>
+
+<div *ngIf="!loading && isAdmin" class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 py-4 sm:py-6">
+                <div class="min-w-0 flex-1">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 break-words">Admin Dashboard</h1>
+                    <p class="text-sm sm:text-base text-gray-600 mt-1">Platform overview and management</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 sm:gap-4">
+                    <button (click)="loadDashboardData()"
+                        class="flex items-center px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <lucide-icon [img]="RefreshCwIcon" class="h-4 w-4 mr-2 flex-shrink-0"></lucide-icon>
+                        <span>Refresh</span>
+                    </button>
+                    <div class="flex items-center text-xs sm:text-sm text-gray-600">
+                        <div class="w-2 h-2 rounded-full mr-2 flex-shrink-0" [ngClass]="{
+                                 'bg-green-400': stats.systemHealth === 'healthy',
+                                 'bg-yellow-400': stats.systemHealth === 'degraded',
+                                 'bg-red-400': stats.systemHealth === 'unhealthy'
+                             }"></div>
+                        <span class="whitespace-nowrap">
+                            System {{ stats.systemHealth | titlecase }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Users</p>
+                        <p class="text-xl sm:text-3xl font-bold text-gray-900">{{ stats.totalUsers }}</p>
+                    </div>
+                    <div class="p-2 sm:p-3 bg-blue-100 rounded-full flex-shrink-0">
+                        <lucide-icon [img]="UsersIcon" class="h-4 w-4 sm:h-6 sm:w-6 text-blue-600"></lucide-icon>
+                    </div>
+                </div>
+                <div class="mt-2 sm:mt-4 flex items-center text-xs sm:text-sm text-gray-600">
+                    <lucide-icon [img]="UsersIcon" class="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0"></lucide-icon>
+                    <span class="truncate">All platform users</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Events</p>
+                        <p class="text-xl sm:text-3xl font-bold text-gray-900">{{ stats.totalEvents }}</p>
+                    </div>
+                    <div class="p-2 sm:p-3 bg-green-100 rounded-full flex-shrink-0">
+                        <lucide-icon [img]="CalendarIcon" class="h-4 w-4 sm:h-6 sm:w-6 text-green-600"></lucide-icon>
+                    </div>
+                </div>
+                <div class="mt-2 sm:mt-4 flex items-center text-xs sm:text-sm text-gray-600">
+                    <lucide-icon [img]="CalendarIcon" class="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0"></lucide-icon>
+                    <span class="truncate">All platform events</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs sm:text-sm font-medium text-gray-600 truncate">Total Participants</p>
+                        <p class="text-xl sm:text-3xl font-bold text-gray-900">{{ stats.totalParticipants }}</p>
+                    </div>
+                    <div class="p-2 sm:p-3 bg-purple-100 rounded-full flex-shrink-0">
+                        <lucide-icon [img]="UsersIcon" class="h-4 w-4 sm:h-6 sm:w-6 text-purple-600"></lucide-icon>
+                    </div>
+                </div>
+                <div class="mt-2 sm:mt-4 flex items-center text-xs sm:text-sm text-gray-600">
+                    <lucide-icon [img]="ActivityIcon" class="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0"></lucide-icon>
+                    <span class="truncate">Across all events</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs sm:text-sm font-medium text-gray-600 truncate">Recent Registrations</p>
+                        <p class="text-xl sm:text-3xl font-bold text-gray-900">{{ stats.recentRegistrations }}</p>
+                    </div>
+                    <div class="p-2 sm:p-3 bg-yellow-100 rounded-full flex-shrink-0">
+                        <lucide-icon [img]="TrendingUpIcon" class="h-4 w-4 sm:h-6 sm:w-6 text-yellow-600"></lucide-icon>
+                    </div>
+                </div>
+                <div class="mt-2 sm:mt-4 flex items-center text-xs sm:text-sm text-gray-600">
+                    <lucide-icon [img]="ClockIcon" class="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0"></lucide-icon>
+                    <span class="truncate">Last 10 activities</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Event Status Overview -->
+        <div class="mb-6 sm:mb-8">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Event Status Overview</h3>
+                <div class="space-y-3 sm:space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-blue-500 rounded-full mr-2 sm:mr-3 flex-shrink-0">
+                            </div>
+                            <span class="text-xs sm:text-sm text-gray-600">Upcoming</span>
+                        </div>
+                        <span class="text-xs sm:text-sm font-semibold text-gray-900">{{ stats.upcomingEvents }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div
+                                class="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-yellow-500 rounded-full mr-2 sm:mr-3 flex-shrink-0">
+                            </div>
+                            <span class="text-xs sm:text-sm text-gray-600">Ongoing</span>
+                        </div>
+                        <span class="text-xs sm:text-sm font-semibold text-gray-900">{{ stats.activeEvents }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 rounded-full mr-2 sm:mr-3 flex-shrink-0">
+                            </div>
+                            <span class="text-xs sm:text-sm text-gray-600">Completed</span>
+                        </div>
+                        <span class="text-xs sm:text-sm font-semibold text-gray-900">{{ stats.completedEvents }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Recent Activity</h3>
+            <div class="space-y-3 sm:space-y-4">
+                <ng-container *ngIf="recentActivity.length > 0; else noActivity">
+                    <div *ngFor="let activity of recentActivity" class="flex items-start space-x-2 sm:space-x-3">
+                        <div class="flex-shrink-0">
+                            <div
+                                class="w-7 h-7 sm:w-8 sm:h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                <lucide-icon [img]="getActivityIcon(activity.type)"
+                                    class="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-600"></lucide-icon>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs sm:text-sm text-gray-900 break-words">{{ activity.message }}</p>
+                            <p class="text-[10px] sm:text-xs text-gray-500">{{ activity.time }}</p>
+                        </div>
+                    </div>
+                </ng-container>
+                <ng-template #noActivity>
+                    <div class="text-center py-6 sm:py-8">
+                        <lucide-icon [img]="ActivityIcon"
+                            class="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-2"></lucide-icon>
+                        <p class="text-xs sm:text-sm text-gray-600">No recent activity</p>
+                    </div>
+                </ng-template>
+            </div>
+        </div>
+    </div>
+</div>

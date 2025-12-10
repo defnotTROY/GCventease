@@ -1,147 +1,162 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { SupabaseService } from '../../../../core/services/supabase.service';
+import { Router, RouterModule } from '@angular/router';
+import { AdminService, SystemHealth } from '../../../../core/services/admin.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { EventsService } from '../../../../core/services/events.service';
+import { StatusService } from '../../../../core/services/status.service';
+import { LucideAngularModule, Activity, Users, Calendar, Settings, CheckCircle, TrendingUp, Clock, RefreshCw, BarChart3, Shield } from 'lucide-angular';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
-    <div class="p-6">
-      <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p class="text-gray-600">System overview and management</p>
-      </div>
-
-      <!-- Stats Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-gray-500 text-sm font-medium">Total Users</h3>
-            <span class="p-2 bg-blue-100 text-blue-600 rounded-lg">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 00-3-3.87" />
-                <path d="M16 3.13a4 4 0 010 7.75" />
-              </svg>
-            </span>
-          </div>
-          <div class="text-2xl font-bold text-gray-900">{{ userCount || '—' }}</div>
-          <p class="text-xs text-green-600 mt-1" *ngIf="userCount">+{{ newUsers }} new this week</p>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-gray-500 text-sm font-medium">Total Events</h3>
-            <span class="p-2 bg-purple-100 text-purple-600 rounded-lg">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <path d="M16 2v4M8 2v4M3 10h18" />
-              </svg>
-            </span>
-          </div>
-          <div class="text-2xl font-bold text-gray-900">{{ eventCount }}</div>
-          <p class="text-xs text-gray-500 mt-1">{{ activeEvents }} active events</p>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-gray-500 text-sm font-medium">Total Participants</h3>
-            <span class="p-2 bg-green-100 text-green-600 rounded-lg">
-               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                 <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                 <circle cx="9" cy="7" r="4" />
-               </svg>
-            </span>
-          </div>
-          <div class="text-2xl font-bold text-gray-900">{{ participantCount }}</div>
-           <p class="text-xs text-gray-500 mt-1">Across all events</p>
-        </div>
-      </div>
-
-      <!-- Quick Links -->
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Management</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <a routerLink="/admin/users" class="group block p-6 bg-white border border-gray-200 rounded-lg hover:border-primary-500 hover:shadow-md transition-all">
-          <div class="flex items-center gap-4">
-            <div class="p-3 bg-blue-50 text-blue-600 rounded-full group-hover:bg-blue-100 transition-colors">
-               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                 <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                 <circle cx="9" cy="7" r="4" />
-               </svg>
-            </div>
-            <div>
-              <h3 class="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">User Management</h3>
-              <p class="text-sm text-gray-500">Manage users and roles</p>
-            </div>
-          </div>
-        </a>
-
-        <a routerLink="/admin/events" class="group block p-6 bg-white border border-gray-200 rounded-lg hover:border-primary-500 hover:shadow-md transition-all">
-          <div class="flex items-center gap-4">
-            <div class="p-3 bg-purple-50 text-purple-600 rounded-full group-hover:bg-purple-100 transition-colors">
-               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                 <rect x="3" y="4" width="18" height="18" rx="2" />
-               </svg>
-            </div>
-            <div>
-              <h3 class="font-semibold text-gray-900 group-hover:text-primary-600 transition-colors">Event Oversight</h3>
-              <p class="text-sm text-gray-500">Monitor and manage all events</p>
-            </div>
-          </div>
-        </a>
-      </div>
-    </div>
-  `
+  imports: [CommonModule, RouterModule, LucideAngularModule],
+  templateUrl: './admin-dashboard.component.html',
+  styleUrl: './admin-dashboard.component.css'
 })
 export class AdminDashboardComponent implements OnInit {
-  userCount = 0;
-  newUsers = 0;
-  eventCount = 0;
-  activeEvents = 0;
-  participantCount = 0;
+  loading = true;
+  isAdmin = false;
 
-  constructor(private supabase: SupabaseService) { }
+  stats = {
+    totalUsers: 0,
+    totalEvents: 0,
+    totalParticipants: 0,
+    activeEvents: 0,
+    upcomingEvents: 0,
+    completedEvents: 0,
+    recentRegistrations: 0,
+    systemHealth: 'healthy' as 'healthy' | 'degraded' | 'unhealthy'
+  };
+
+  recentActivity: any[] = [];
+
+  // Icons
+  readonly ActivityIcon = Activity;
+  readonly UsersIcon = Users;
+  readonly CalendarIcon = Calendar;
+  readonly SettingsIcon = Settings;
+  readonly CheckCircleIcon = CheckCircle;
+  readonly TrendingUpIcon = TrendingUp;
+  readonly ClockIcon = Clock;
+  readonly RefreshCwIcon = RefreshCw;
+  readonly ShieldIcon = Shield;
+
+  constructor(
+    private adminService: AdminService,
+    private authService: AuthService,
+    private eventsService: EventsService,
+    private statusService: StatusService,
+    private router: Router
+  ) { }
 
   async ngOnInit() {
-    await this.loadStats();
-  }
+    // Check Admin Access
+    const user = await this.authService.getCurrentUser();
+    const role = user?.user_metadata?.role;
+    // Accept 'admin', 'Admin', 'Administrator'
+    this.isAdmin = role === 'admin' || role === 'Admin' || role === 'Administrator';
 
-  async loadStats() {
-    // Events Stats
-    const { data: events } = await this.supabase.client
-      .from('events')
-      .select('id, status, created_at');
-
-    if (events) {
-      this.eventCount = events.length;
-      this.activeEvents = events.filter((e: any) => e.status === 'ongoing' || e.status === 'upcoming').length;
+    if (!this.isAdmin) {
+      // If role guard didn't catch it
+      this.loading = false;
+      return;
     }
 
-    // Participants Stats
-    const { count } = await this.supabase.client
-      .from('participants')
-      .select('id', { count: 'exact', head: true });
+    await this.loadDashboardData();
+  }
 
-    if (count !== null) this.participantCount = count;
+  async loadDashboardData() {
+    try {
+      this.loading = true;
 
-    // Users Stats (If simple connection is possible via participants unique count as proxy for now)
-    // Real user count requires 'profiles' table or admin API
-    // We'll use unique participants as a proxy for "Active Users" if no profiles table
-    // Try to select from 'profiles' first
-    const { count: profilesCount, error } = await this.supabase.client
-      .from('profiles') // Assuming profiles table exists?
-      .select('id', { count: 'exact', head: true });
+      // 1. Events Stats
+      const { data: events, error } = await this.eventsService.getAllEvents();
+      if (error) throw error;
 
-    if (!error && profilesCount !== null) {
-      this.userCount = profilesCount;
-    } else {
-      // Fallback: Count unique user_ids in participants + events
-      // Not efficient, but works for mock/small scale
-      // For now, let's leave userCount as 0 or a placeholder string if error
-      this.userCount = 0; // "—" in template
+      const allEvents = events || [];
+      this.stats.totalEvents = allEvents.length;
+
+      this.stats.activeEvents = allEvents.filter(e => this.statusService.calculateEventStatus(e) === 'ongoing').length;
+      this.stats.upcomingEvents = allEvents.filter(e => this.statusService.calculateEventStatus(e) === 'upcoming').length;
+      this.stats.completedEvents = allEvents.filter(e => this.statusService.calculateEventStatus(e) === 'completed').length;
+
+      // 2. Participants Stats
+      let totalParticipants = 0;
+      // We can parallelize or just use the loop if not too many
+      // Optimisation: getAllParticipants count from a service if available, else loop
+      // We will loop a few or use event participants sums
+      // Note: React did a loop over *all* events. If events are many, this is slow.
+      // But AdminService might have a smarter way if we added one. 
+      // AdminService had `getTotalUsers`. 
+
+      // Let's emulate React's loop for Total Participants for now but careful with perf.
+      // Actually we can query table count directly? getEventParticipants in existing service returns count for one event.
+      // We don't have a "get TOTAL participants system wide" method.
+      // We'll iterate for now, maybe only active events? No React did all.
+      // Let's optimize: fetch all participants table rows count?
+      // Supabase count is cheap.
+      // Let's add that to AdminService or just do it here via a quick hack if needed?
+      // No, let's stick to standard service method usage or safe loop.
+      // If events > 50, this is bad.
+      // Actually, let's skip the loop if > 50 events and just use 0 or estimate?
+      // Or just count rows in 'participants' table using supabase client directly if we could.
+      // But we are in Component.
+      // Let's just Loop.
+
+      for (const event of allEvents) {
+        // This is potentially N requests. 
+        // TODO: Add getSystemStats to AdminService later for single-query fetch.
+      }
+      // Actually, let's assume AdminService logic for totalUsers covered some of this? No.
+
+      // I'll skip fine-grained participant count for *every* event in this blocking call to avoid timeout.
+      // I will implement a simpler 'count' in AdminService? 
+      // Let's just implement `getGlobalParticipantCount` in AdminService locally?
+      // I can't easily modify AdminService while in this file writing step.
+      // I'll leave it as 0 for now or try to estimate from filtered events.
+
+      const health = await this.adminService.getSystemHealth();
+      this.stats.systemHealth = health.status;
+
+      this.stats.totalUsers = await this.adminService.getTotalUsers();
+
+      const registrations = await this.adminService.getRecentRegistrations(10);
+      this.stats.recentRegistrations = registrations.length;
+
+      // Activity
+      this.recentActivity = await this.adminService.getRecentActivity(10);
+
+      // Correction: AdminService might not be perfectly mirroring all React logic for participants count
+      // Reuse the loop logic properly if I want 1:1 match
+      /*
+      for (const event of allEvents) {
+          const { data: count } = await this.eventsService.getEventParticipants(event.id);
+          totalParticipants += count || 0;
+      }
+      this.stats.totalParticipants = totalParticipants;
+      */
+      // I'll omit the loop for performance scaling, user didn't explicitly demand exact parity on that metric if it kills performance.
+      // But wait, user said "functional parity".
+      // Okay, I will include it but wrapped in Promise.all to be faster or just efficient.
+      const participantCountsPromises = allEvents.map(e => this.eventsService.getEventParticipants(e.id));
+      const counts = await Promise.all(participantCountsPromises);
+      this.stats.totalParticipants = counts.reduce((acc, curr) => acc + (curr.data || 0), 0);
+
+    } catch (error) {
+      console.error('Error loading admin dashboard:', error);
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  getActivityIcon(type: string) {
+    switch (type) {
+      case 'user_registration': return Users;
+      case 'event_created': return Calendar;
+      case 'participant_registered': return Users;
+      case 'event_completed': return CheckCircle;
+      default: return Activity;
     }
   }
 }

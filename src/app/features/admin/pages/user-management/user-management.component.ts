@@ -1,127 +1,211 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
-import { SupabaseService } from '../../../../core/services/supabase.service';
+import { Router, RouterModule } from '@angular/router';
+import { AdminService } from '../../../../core/services/admin.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { ToastService } from '../../../../core/services/toast.service';
+import { FilterUsersPipe } from '../../../../shared/pipes/filter-users.pipe';
+import { LucideAngularModule, Users, Search, Shield, UserCheck, UserX, Mail, Calendar, Loader2, RefreshCw, X, AlertTriangle } from 'lucide-angular';
 
 @Component({
-    selector: 'app-user-management',
-    standalone: true,
-    imports: [CommonModule, FormsModule, RouterModule],
-    template: `
-    <div class="p-6">
-      <div class="flex justify-between items-center mb-6">
-        <div>
-           <nav class="text-sm text-gray-500 mb-1">
-             <a routerLink="/admin" class="hover:text-primary-600">Admin</a> / Users
-           </nav>
-           <h1 class="text-2xl font-bold text-gray-900">User Management</h1>
-        </div>
-        <button class="btn-primary" (click)="loadUsers()">Refresh List</button>
-      </div>
-
-      <!-- Warning if no profiles table -->
-      <div *ngIf="error" class="bg-red-50 text-red-700 p-4 rounded-lg mb-6 border border-red-200">
-        {{ error }}
-        <p class="text-sm mt-2">Note: To manage users, ensure a 'profiles' public table exists and is synced with auth.users.</p>
-      </div>
-
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-              <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr *ngFor="let user of users">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-sm">
-                    {{ (user.first_name?.[0] || user.email?.[0] || 'U') | uppercase }}
-                  </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-medium text-gray-900">{{ user.first_name }} {{ user.last_name }}</div>
-                    <div class="text-sm text-gray-500">{{ user.email }}</div>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                      [ngClass]="getRoleClass(user.role)">
-                  {{ user.role }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ formatDate(user.created_at) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                 <button class="text-primary-600 hover:text-primary-900 mr-4">Edit</button>
-              </td>
-            </tr>
-            <tr *ngIf="users.length === 0 && !loading">
-               <td colspan="4" class="px-6 py-12 text-center text-gray-500">
-                  No users found or lack of permissions to view users.
-               </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `
+  selector: 'app-user-management',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule, LucideAngularModule, FilterUsersPipe],
+  templateUrl: './user-management.component.html',
+  styleUrl: './user-management.component.css'
 })
 export class UserManagementComponent implements OnInit {
-    users: any[] = [];
-    loading = false;
-    error: string | null = null;
+  loading = true;
+  isAdmin = false;
+  users: any[] = [];
+  filteredUsers: any[] = [];
+  totalUsersCount = 0;
+  currentUser: any = null;
 
-    constructor(private supabase: SupabaseService) { }
+  // Search & Filters
+  searchQuery = '';
+  roleFilter = 'all';
+  statusFilter = 'all';
 
-    async ngOnInit() {
-        await this.loadUsers();
+  // Action State
+  actionLoading: string | null = null;
+  selectedUserForAction: any = null;
+  showResetPasswordModal = false;
+  showStatusModal = false;
+
+  // Icons
+  readonly UsersIcon = Users;
+  readonly SearchIcon = Search;
+  readonly ShieldIcon = Shield;
+  readonly UserCheckIcon = UserCheck;
+  readonly UserXIcon = UserX;
+  readonly MailIcon = Mail;
+  readonly CalendarIcon = Calendar;
+  readonly Loader2Icon = Loader2;
+  readonly RefreshCwIcon = RefreshCw;
+  readonly XIcon = X;
+  readonly AlertTriangleIcon = AlertTriangle;
+
+  constructor(
+    private adminService: AdminService,
+    private authService: AuthService,
+    private toast: ToastService,
+    private router: Router
+  ) { }
+
+  async ngOnInit() {
+    this.currentUser = await this.authService.getCurrentUser();
+    const role = this.currentUser?.user_metadata?.role;
+    this.isAdmin = role === 'admin' || role === 'Admin' || role === 'Administrator';
+
+    if (!this.isAdmin) {
+      this.loading = false;
+      return;
     }
 
-    async loadUsers() {
-        this.loading = true;
-        this.error = null;
-        try {
-            // Try getting profiles
-            const { data, error } = await this.supabase.client
-                .from('profiles')
-                .select('*')
-                .order('created_at', { ascending: false });
+    await this.loadUsers();
+  }
 
-            if (error) throw error;
+  async loadUsers() {
+    try {
+      this.loading = true;
+      const [allUsers, totalCount] = await Promise.all([
+        this.adminService.getAllUsers(),
+        this.adminService.getTotalUsers()
+      ]);
 
-            this.users = data || [];
-        } catch (e: any) {
-            console.error('Error loading users:', e);
-            this.error = "Could not load users. " + e.message;
+      // Mark current user as admin if needed (React logic copy)
+      if (this.currentUser) {
+        allUsers.forEach(u => {
+          if (u.id === this.currentUser.id && this.isAdmin) {
+            u.role = 'Administrator';
+          }
+        });
+      }
 
-            // Fallback: If current user is admin, maybe show just them?
-            // Or if we have a mock list for demo
-        } finally {
-            this.loading = false;
-        }
+      this.users = allUsers;
+      this.totalUsersCount = Math.max(totalCount, allUsers.length); // Ensure at least list length
+      this.applyFilters();
+    } catch (error) {
+      console.error('Error loading users:', error);
+      this.users = [];
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  applyFilters() {
+    let filtered = this.users;
+
+    if (this.searchQuery) {
+      const q = this.searchQuery.toLowerCase();
+      filtered = filtered.filter(u =>
+        (u.first_name && u.first_name.toLowerCase().includes(q)) ||
+        (u.last_name && u.last_name.toLowerCase().includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q)) ||
+        (u.organization && u.organization.toLowerCase().includes(q))
+      );
     }
 
-    getRoleClass(role: string): string {
-        switch (role?.toLowerCase()) {
-            case 'admin':
-            case 'administrator':
-                return 'bg-purple-100 text-purple-800';
-            case 'organizer':
-                return 'bg-blue-100 text-blue-800';
-            default:
-                return 'bg-green-100 text-green-800';
-        }
+    if (this.roleFilter !== 'all') {
+      filtered = filtered.filter(u => u.role === this.roleFilter);
     }
 
-    formatDate(date: string): string {
-        if (!date) return '-';
-        return new Date(date).toLocaleDateString();
+    if (this.statusFilter !== 'all') {
+      filtered = filtered.filter(u => u.status === this.statusFilter);
     }
+
+    this.filteredUsers = filtered;
+  }
+
+  onFilterChange() {
+    this.applyFilters();
+  }
+
+  getRoleColor(role: string): string {
+    switch (role) {
+      case 'Administrator': return 'bg-red-100 text-red-800';
+      case 'Event Organizer': return 'bg-blue-100 text-blue-800';
+      case 'Viewer': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  getStatusColor(status: string): string {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'inactive': return 'bg-yellow-100 text-yellow-800';
+      case 'suspended': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  getNewUsersThisMonth(): number {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    return this.users.filter(u => {
+      if (!u.created_at) return false;
+      return new Date(u.created_at) >= startOfMonth;
+    }).length;
+  }
+
+  // Action Handlers
+  openStatusModal(user: any) {
+    const statusMap: any = {
+      'active': 'inactive',
+      'inactive': 'suspended',
+      'suspended': 'active'
+    };
+    const newStatus = statusMap[user.status] || 'inactive';
+    this.selectedUserForAction = { ...user, newStatus };
+    this.showStatusModal = true;
+  }
+
+  async confirmUpdateStatus() {
+    if (!this.selectedUserForAction) return;
+
+    const { id: userId, newStatus } = this.selectedUserForAction;
+    this.showStatusModal = false;
+    this.actionLoading = userId;
+
+    try {
+      await this.adminService.updateUserStatus(userId, newStatus);
+      this.toast.success(`User status updated to ${newStatus}`);
+      await this.loadUsers();
+    } catch (error: any) {
+      this.toast.error(`Unable to update status: ${error.message || 'Error'}`);
+    } finally {
+      this.actionLoading = null;
+      this.selectedUserForAction = null;
+    }
+  }
+
+  openResetPasswordModal(user: any) {
+    this.selectedUserForAction = user;
+    this.showResetPasswordModal = true;
+  }
+
+  async confirmResetPassword() {
+    if (!this.selectedUserForAction) return;
+
+    const email = this.selectedUserForAction.email;
+    this.showResetPasswordModal = false;
+
+    try {
+      const result = await this.authService.forgotPassword(email);
+      if (!result.success) throw new Error(result.error);
+      this.toast.success(`Reset email sent to ${email}`);
+    } catch (error: any) {
+      this.toast.error(`Failed to send reset email: ${error.message}`);
+    } finally {
+      this.selectedUserForAction = null;
+    }
+  }
+
+  closeModals() {
+    this.showResetPasswordModal = false;
+    this.showStatusModal = false;
+    this.selectedUserForAction = null;
+  }
 }

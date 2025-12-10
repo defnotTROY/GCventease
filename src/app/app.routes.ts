@@ -26,6 +26,8 @@ export const routes: Routes = [
     { path: 'signup', loadComponent: SignupComponent },
     { path: 'forgot-password', loadComponent: ForgotPasswordComponent },
     { path: 'reset-password', loadComponent: ResetPasswordComponent },
+    { path: 'create-admin', loadComponent: () => import('./features/auth/pages/create-admin/create-admin.component').then(m => m.CreateAdminComponent) },
+    { path: 'verification', loadComponent: () => import('./features/auth/pages/email-verification/email-verification.component').then(m => m.EmailVerificationComponent) },
 
     // Protected routes (Wrapped in Main Layout)
     {
@@ -51,6 +53,12 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/admin/pages/admin-event-management/admin-event-management.component').then(m => m.AdminEventManagementComponent),
                 canActivate: [roleGuard],
                 data: { roles: ['admin', 'administrator'] }
+            },
+            {
+                path: 'admin/checkin',
+                loadComponent: () => import('./features/admin/pages/admin-qr-checkin/admin-qr-checkin.component').then(m => m.AdminQRCheckInComponent),
+                canActivate: [roleGuard],
+                data: { roles: ['admin', 'administrator', 'organizer'] } // Organizer logic allowed
             },
             { path: 'events', loadComponent: EventsComponent },
             { path: 'events/create', loadComponent: EventCreationComponent },

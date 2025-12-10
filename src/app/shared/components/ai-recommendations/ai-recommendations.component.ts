@@ -2,10 +2,10 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
-    selector: 'app-ai-recommendations',
-    standalone: true,
-    imports: [CommonModule],
-    template: `
+  selector: 'app-ai-recommendations',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
     <div class="card">
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center">
@@ -23,19 +23,28 @@ import { CommonModule } from '@angular/common';
         </button>
       </div>
 
-      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
         <h4 class="font-medium text-blue-900 mb-2">AI Insights</h4>
         <p class="text-blue-800 text-sm">
           No upcoming events available for recommendations at this time. Check back later for new events!
         </p>
-        <p class="text-blue-700 text-sm mt-2 italic">
+      </div>
+
+      <div class="text-center py-8">
+        <div class="inline-flex items-center justify-center p-3 bg-gray-50 rounded-full mb-4">
+             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-gray-400">
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <p class="text-gray-500 font-medium">No personalized recommendations available yet.</p>
+        <p class="text-sm text-gray-400 mt-1">
           Create and attend more events to get better recommendations!
         </p>
       </div>
     </div>
   `,
-    styles: []
+  styles: []
 })
 export class AiRecommendationsComponent {
-    @Input() user: any = null;
+  @Input() user: any = null;
 }

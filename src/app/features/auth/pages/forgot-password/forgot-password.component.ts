@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
@@ -19,7 +19,8 @@ export class ForgotPasswordComponent {
 
     constructor(
         private fb: FormBuilder,
-        private authService: AuthService
+        private authService: AuthService,
+        private router: Router
     ) {
         this.forgotPasswordForm = this.fb.group({
             email: ['', [Validators.required, Validators.email]]
@@ -44,6 +45,10 @@ export class ForgotPasswordComponent {
         if (result.success) {
             this.successMessage = result.message || 'Password reset email sent!';
             this.forgotPasswordForm.reset();
+            // Redirect to login after 3 seconds
+            setTimeout(() => {
+                this.router.navigate(['/login']);
+            }, 3000);
         } else {
             this.errorMessage = result.error || 'Failed to send reset email. Please try again.';
         }

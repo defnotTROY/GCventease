@@ -2,14 +2,23 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+
 import { AuthService } from '../../../../core/services/auth.service';
 import { EventsService, Event } from '../../../../core/services/events.service';
+import { StatusService } from '../../../../core/services/status.service';
+import { ToastService } from '../../../../core/services/toast.service';
 import { AuthUser } from '../../../../core/services/supabase.service';
+import { GORDON_COLLEGE_DEPARTMENTS } from '../../../../core/config/gordon-college.config';
 
 @Component({
   selector: 'app-events',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+
+  ],
   templateUrl: './events.component.html',
   styleUrl: './events.component.css'
 })
@@ -19,13 +28,38 @@ export class EventsComponent implements OnInit {
   currentPage = 'Events';
 
   // Filters
-  searchQuery = '';
-  selectedCategory = 'all';
-  selectedStatus = 'all';
-  viewMode: 'grid' | 'list' = 'grid';
+  private _searchQuery = '';
+  private _selectedCategory = 'all';
+  private _selectedStatus = 'all';
+  private _viewMode: 'grid' | 'list' = 'grid';
+
+  get searchQuery(): string { return this._searchQuery; }
+  set searchQuery(value: string) {
+    this._searchQuery = value;
+    this.updateFilteredEvents();
+  }
+
+  get selectedCategory(): string { return this._selectedCategory; }
+  set selectedCategory(value: string) {
+    this._selectedCategory = value;
+    this.updateFilteredEvents();
+  }
+
+  get selectedStatus(): string { return this._selectedStatus; }
+  set selectedStatus(value: string) {
+    this._selectedStatus = value;
+    this.updateFilteredEvents();
+  }
+
+  get viewMode(): 'grid' | 'list' { return this._viewMode; }
+  set viewMode(value: 'grid' | 'list') {
+    this._viewMode = value;
+    this.updateFilteredEvents();
+  }
 
   // Data
   events: Event[] = [];
+  filteredEvents: Event[] = [];
   loading = true;
   error: string | null = null;
   user: AuthUser | null = null;
@@ -45,7 +79,9 @@ export class EventsComponent implements OnInit {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private eventsService: EventsService
+    private eventsService: EventsService,
+    private statusService: StatusService,
+    private toastService: ToastService
   ) { }
 
   async ngOnInit() {
@@ -74,13 +110,15 @@ export class EventsComponent implements OnInit {
 
       this.events = data || [];
 
-      // Extract unique categories
-      const uniqueCategories = new Set<string>();
+      // Extract unique categories from events and merge with predefined list
+      const uniqueCategories = new Set<string>(GORDON_COLLEGE_DEPARTMENTS);
       this.events.forEach(event => {
         if (event?.category) {
           uniqueCategories.add(event.category);
         }
       });
+
+      // Convert to array and sort (keeping 'all' at the start)
       this.categoryOptions = ['all', ...Array.from(uniqueCategories).sort()];
 
       // Load participant counts
@@ -97,6 +135,60 @@ export class EventsComponent implements OnInit {
       this.error = 'Failed to load events. Please try again.';
     } finally {
       this.loading = false;
+      this.updateFilteredEvents();
+    }
+  }
+
+  private updateFilteredEvents() {
+    // Update filtered list
+    this.filteredEvents = this.events.filter(event => {
+      const matchesSearch = event.title.toLowerCase().includes(this._searchQuery.toLowerCase()) ||
+        event.description.toLowerCase().includes(this._searchQuery.toLowerCase());
+      const matchesCategory = this._selectedCategory === 'all' || event.category === this._selectedCategory;
+      const eventStatus = this.eventsService.calculateEventStatus(event);
+      const matchesStatus = this._selectedStatus === 'all' || eventStatus === this._selectedStatus || event.status === this._selectedStatus;
+
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+
+    // Update selection if in list mode
+    if (this._viewMode !== 'list') return;
+
+    if (this.filteredEvents.length === 0) {
+      this.selectedEvent = null;
+      return;
+    }
+
+    // If currently selected event is still in the list, keep it.
+    // Otherwise, select the first one.
+    if (!this.selectedEvent || !this.filteredEvents.find(e => e.id === this.selectedEvent?.id)) {
+      this.selectedEvent = this.filteredEvents[0];
+    }
+  }
+
+  async handleAutoUpdateStatuses() {
+    if (!this.user) return;
+
+    try {
+      this.toastService.info('Updating Statuses', 'Checking for event status updates...', 3000);
+      const { data, error } = await this.statusService.autoUpdateAllStatuses(this.user.id);
+
+      if (error) throw error;
+
+      // Reload events
+      await this.loadEvents();
+
+      if (data && data.updated > 0) {
+        this.toastService.success(
+          'Statuses Updated',
+          `Successfully updated ${data.updated} event status${data.updated === 1 ? '' : 'es'} automatically.`
+        );
+      } else {
+        this.toastService.info('Up to Date', 'All event statuses are already up to date.');
+      }
+    } catch (error) {
+      console.error('Error auto-updating event statuses:', error);
+      this.toastService.error('Update Failed', 'Unable to update event statuses at this time.');
     }
   }
 
@@ -107,10 +199,11 @@ export class EventsComponent implements OnInit {
       const { error } = await this.eventsService.deleteEvent(eventId);
       if (error) throw error;
 
+      this.toastService.success('Event Deleted', 'The event has been successfully deleted.');
       await this.loadEvents();
     } catch (error) {
       console.error('Error deleting event:', error);
-      alert('Unable to delete the event at this time. Please try again later.');
+      this.toastService.error('Delete Failed', 'Unable to delete the event at this time.');
     }
   }
 
@@ -120,18 +213,6 @@ export class EventsComponent implements OnInit {
       this.userRole === 'Administrator' || this.userRole === 'admin';
     const isEventOwner = event.user_id === this.user.id;
     return isOrganizerOrAdmin || isEventOwner;
-  }
-
-  get filteredEvents(): Event[] {
-    return this.events.filter(event => {
-      const matchesSearch = event.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        event.description.toLowerCase().includes(this.searchQuery.toLowerCase());
-      const matchesCategory = this.selectedCategory === 'all' || event.category === this.selectedCategory;
-      const eventStatus = this.eventsService.calculateEventStatus(event);
-      const matchesStatus = this.selectedStatus === 'all' || eventStatus === this.selectedStatus || event.status === this.selectedStatus;
-
-      return matchesSearch && matchesCategory && matchesStatus;
-    });
   }
 
   formatDate(dateString: string): string {

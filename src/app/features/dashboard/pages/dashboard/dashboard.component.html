@@ -98,34 +98,7 @@
     </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="quick-actions-bar">
-    <h3>Quick Actions</h3>
-    <div class="action-buttons">
-        <button *ngIf="isOrganizerOrAdmin" class="action-btn primary"
-            (click)="navigateTo('Create Event', '/events/create')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
-                <path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="2" />
-            </svg>
-            Create New Event
-        </button>
-        <button class="action-btn secondary" (click)="navigateTo('Events', '/events')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" />
-                <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="2" />
-            </svg>
-            View All Events
-        </button>
-        <button *ngIf="isOrganizerOrAdmin" class="action-btn secondary" (click)="navigateTo('Analytics', '/analytics')">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <path d="M3 3v18h18" stroke="currentColor" stroke-width="2" />
-                <path d="M18 17V9M13 17v-6M8 17v-3" stroke="currentColor" stroke-width="2" />
-            </svg>
-            View Analytics
-        </button>
-    </div>
-</div>
+
 
 <!-- Tabs -->
 <div class="tabs-container">
@@ -163,46 +136,112 @@
         <div class="events-table-container">
             <div class="table-header">
                 <h3>{{ isOrganizerOrAdmin ? 'My Created Events' : 'My Registered Events' }}</h3>
-                <button class="filter-btn">Filter</button>
-                <button class="export-btn">Export</button>
+                <div class="flex gap-2">
+                    <button class="filter-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46 22,3" />
+                        </svg>
+                        Filter
+                    </button>
+                    <button class="export-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                        </svg>
+                        Export
+                    </button>
+                </div>
             </div>
 
             <div *ngIf="allEvents.length === 0" class="no-events">
-                <p>No events found. {{ isOrganizerOrAdmin ? 'Create your first event to get started!' : 'Register for an
-                    event to see it here.' }}</p>
-                <button *ngIf="isOrganizerOrAdmin" class="mt-4 btn-primary"
-                    (click)="navigateTo('Create Event', '/events/create')">Create Event</button>
-                <button *ngIf="!isOrganizerOrAdmin" class="mt-4 btn-primary"
+                <div class="no-events-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
+                        <rect x="3" y="4" width="18" height="18" rx="2" />
+                        <path d="M16 2v4M8 2v4M3 10h18" />
+                    </svg>
+                </div>
+                <h4>No events found</h4>
+                <p>{{ isOrganizerOrAdmin ? 'Create your first event to get started!' : 'Register for an event to see it
+                    here.' }}</p>
+                <button *ngIf="isOrganizerOrAdmin" class="btn-primary mt-4"
+                    (click)="navigateTo('Create Event', '/events/create')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 8v8M8 12h8" />
+                    </svg>
+                    Create Event
+                </button>
+                <button *ngIf="!isOrganizerOrAdmin" class="btn-primary mt-4"
                     (click)="navigateTo('Events', '/events')">Browse Events</button>
             </div>
 
-            <!-- Simple List/Table for Events -->
-            <div *ngIf="allEvents.length > 0" class="grid gap-4">
-                <div *ngFor="let event of allEvents"
-                    class="bg-white p-4 rounded-lg border border-gray-200 flex justify-between items-center">
-                    <div>
-                        <h4 class="font-semibold text-gray-900">{{ event.title }}</h4>
-                        <div class="text-sm text-gray-500 mt-1">
-                            {{ formatDate(event.date) }} • {{ event.time }} • {{ event.location }}
-                        </div>
-                        <div *ngIf="!isOrganizerOrAdmin" class="mt-2 text-xs">
-                            <span [class.text-green-600]="event.registration_status === 'registered'"
-                                [class.text-blue-600]="event.registration_status === 'attended'">
-                                Status: {{ event.registration_status | titlecase }}
-                            </span>
-                        </div>
+            <!-- Redesigned Event Cards -->
+            <div *ngIf="allEvents.length > 0" class="events-grid">
+                <div *ngFor="let event of allEvents" class="event-card" [routerLink]="['/events', event.id]">
+                    <!-- Card Header with gradient -->
+                    <div class="event-card-header" [ngClass]="{
+                        'gradient-blue': event.status === 'upcoming',
+                        'gradient-green': event.status === 'ongoing',
+                        'gradient-gray': event.status === 'completed'
+                    }">
+                        <span class="event-category">{{ event.category || 'Event' }}</span>
+                        <span class="event-status-badge" [ngClass]="{
+                            'status-upcoming': event.status === 'upcoming',
+                            'status-ongoing': event.status === 'ongoing',
+                            'status-completed': event.status === 'completed'
+                        }">{{ event.status | titlecase }}</span>
                     </div>
-                    <div class="text-right">
-                        <div *ngIf="isOrganizerOrAdmin" class="text-sm font-medium text-gray-900">{{ event.participants
-                            }} participants</div>
-                        <div class="text-xs px-2 py-1 rounded mt-2 inline-block"
-                            [class.bg-green-100]="event.status === 'upcoming'"
-                            [class.text-green-800]="event.status === 'upcoming'"
-                            [class.bg-blue-100]="event.status === 'ongoing'"
-                            [class.text-blue-800]="event.status === 'ongoing'"
-                            [class.bg-gray-100]="event.status === 'completed'"
-                            [class.text-gray-800]="event.status === 'completed'">
-                            {{ event.status | uppercase }}
+
+                    <!-- Card Body -->
+                    <div class="event-card-body">
+                        <h4 class="event-title">{{ event.title }}</h4>
+
+                        <div class="event-meta">
+                            <div class="meta-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                                    <path d="M16 2v4M8 2v4M3 10h18" />
+                                </svg>
+                                <span>{{ formatDate(event.date) }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M12 6v6l4 2" />
+                                </svg>
+                                <span>{{ event.time }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1118 0z" />
+                                    <circle cx="12" cy="10" r="3" />
+                                </svg>
+                                <span>{{ event.location }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Registration Status for Users -->
+                        <div *ngIf="!isOrganizerOrAdmin && event.registration_status" class="registration-status">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                                <polyline points="22 4 12 14.01 9 11.01" />
+                            </svg>
+                            <span>{{ event.registration_status | titlecase }}</span>
+                        </div>
+
+                        <!-- Participants for Organizers -->
+                        <div *ngIf="isOrganizerOrAdmin" class="participants-count">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                                <circle cx="9" cy="7" r="4" />
+                            </svg>
+                            <span>{{ event.participants }} participants</span>
                         </div>
                     </div>
                 </div>

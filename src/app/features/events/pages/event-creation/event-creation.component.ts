@@ -1,193 +1,298 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { LocationSearchComponent } from '../../../../shared/components/location-search/location-search.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import { EventsService } from '../../../../core/services/events.service';
+import { StorageService } from '../../../../core/services/storage.service';
+import { ToastService } from '../../../../core/services/toast.service';
+import { VerificationService } from '../../../../core/services/verification.service';
+import { AuthUser } from '../../../../core/services/supabase.service';
+import { GORDON_COLLEGE_DEPARTMENTS } from '../../../../core/config/gordon-college.config';
 
 @Component({
   selector: 'app-event-creation',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterModule,
+    LocationSearchComponent
+  ],
   templateUrl: './event-creation.component.html',
   styleUrl: './event-creation.component.css'
 })
 export class EventCreationComponent implements OnInit {
-  // Sidebar state
-  isSidebarCollapsed = false;
-  currentPage = 'Create Event';
-
-  // Form
-  eventForm!: FormGroup;
+  currentStep = 1;
+  eventForm: FormGroup;
   loading = false;
-  error: string | null = null;
-  user: any = null;
+  imagePreview: string | null = null;
+  imageFile: File | null = null;
+  imageUploading = false;
+  user: AuthUser | null = null;
+  tags: string[] = [];
 
-  categories = [
-    'Academic',
-    'Sports',
-    'Cultural',
-    'Technology',
-    'Community Service',
-    'Workshop',
-    'Seminar',
-    'Social',
-    'Other'
+  // AI Suggestions (Static for now, matching React)
+  aiSuggestions = [
+    'Consider adding networking breaks for better engagement',
+    'Based on similar events, 2-4 PM has highest attendance',
+    'Include interactive elements like Q&A sessions',
+    'Central locations see 25% higher registration rates'
   ];
+
+  categories = GORDON_COLLEGE_DEPARTMENTS;
+
+  // Time options
+  hours = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+  minutes = ['00', '15', '30', '45'];
+  periods = ['AM', 'PM'];
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
     private authService: AuthService,
-    private eventsService: EventsService
-  ) { }
+    private eventsService: EventsService,
+    private storageService: StorageService,
+    private toastService: ToastService,
+    private verificationService: VerificationService
+  ) {
+    this.eventForm = this.fb.group({
+      title: ['', Validators.required],
+      description: ['', Validators.required],
+      date: ['', [Validators.required, this.futureDateValidator]],
+      timeHour: ['09', Validators.required],
+      timeMinute: ['00', Validators.required],
+      timePeriod: ['AM', Validators.required],
+      endTimeHour: ['11', Validators.required],
+      endTimeMinute: ['00', Validators.required],
+      endTimePeriod: ['AM', Validators.required],
+      location: ['', Validators.required],
+      maxParticipants: [''],
+      category: ['', Validators.required],
+      tagInput: [''], // Temporary control for adding tags
+      isVirtual: [false],
+      virtualLink: [''],
+      requirements: [''],
+      contactEmail: ['', [Validators.required, Validators.email]],
+      contactPhone: ['']
+    });
+  }
 
   async ngOnInit() {
     this.user = await this.authService.getCurrentUser();
     if (!this.user) {
+      this.toastService.error('Authentication Error', 'You must be logged in to create an event.');
       this.router.navigate(['/login']);
       return;
     }
 
-    this.initForm();
-  }
+    // Role check logic matching React
+    const role = this.user.user_metadata?.role;
+    const isOrganizerOrAdmin = role === 'Organizer' || role === 'organizer' ||
+      role === 'Administrator' || role === 'admin' || role === 'Admin';
 
-  initForm() {
-    this.eventForm = this.fb.group({
-      title: [''],
-      description: ['', Validators.required],
-      date: ['', [Validators.required, this.futureDateValidator]],
-      time: ['', Validators.required],
-      end_time: [''],
-      location: ['', Validators.required],
-      category: ['', Validators.required],
-      max_participants: [''],
-      is_virtual: [false],
-      virtual_link: [''],
-      image_url: ['']
-    });
-  }
-
-  selectedFile: File | null = null;
-  imagePreview: string | null = null;
-
-  async onSubmit() {
-    if (this.eventForm.invalid) {
-      this.markFormGroupTouched(this.eventForm);
+    if (!isOrganizerOrAdmin) {
+      this.toastService.error('Access Denied', 'Only organizers can create events.');
+      this.router.navigate(['/events']);
       return;
     }
 
-    try {
-      this.loading = true;
-      this.error = null;
+    // Verification check for organizers (admins bypassed)
+    // Verification check removed by user request
+    // const isAdmin = role === 'Administrator' || role === 'Admin' || role === 'admin';
+    // if (!isAdmin) {
+    //   const isVerified = await this.verificationService.isVerified(this.user.id);
+    //   if (!isVerified) {
+    //     this.toastService.warning('Verification Required', 'Please verify your identity before creating events.');
+    //     this.router.navigate(['/settings']);
+    //     return;
+    //   }
+    // }
 
-      let imageUrl = this.eventForm.get('image_url')?.value;
-
-      if (this.selectedFile) {
-        const { publicUrl, error: uploadError } = await this.eventsService.uploadEventImage(this.selectedFile);
-        if (uploadError) throw uploadError;
-        imageUrl = publicUrl;
-      }
-
-      const eventData = {
-        ...this.eventForm.value,
-        image_url: imageUrl,
-        user_id: this.user.id,
-        status: 'upcoming',
-        created_at: new Date().toISOString()
-      };
-
-      const { data, error } = await this.eventsService.createEvent(eventData);
-
-      if (error) throw error;
-
-      alert('Event created successfully!');
-      this.router.navigate(['/events', data?.id]);
-    } catch (error: any) {
-      console.error('Error creating event:', error);
-      this.error = error.message || 'Failed to create event. Please try again.';
-    } finally {
-      this.loading = false;
+    // Auto-fill contact email from user
+    if (this.user.email) {
+      this.eventForm.patchValue({ contactEmail: this.user.email });
     }
   }
 
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      this.selectedFile = file;
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.imagePreview = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  private markFormGroupTouched(formGroup: FormGroup) {
-    Object.keys(formGroup.controls).forEach(key => {
-      const control = formGroup.get(key);
-      control?.markAsTouched();
-    });
-  }
-
-  get f() {
-    return this.eventForm.controls;
-  }
-
-  cancel() {
-    this.router.navigate(['/events']);
-  }
-
-  // Sidebar methods
-  toggleSidebar() {
-    this.isSidebarCollapsed = !this.isSidebarCollapsed;
-  }
-
-  navigateTo(page: string, route: string) {
-    this.currentPage = page;
-    this.router.navigate([route]);
-  }
-
-  async logout() {
-    const result = await this.authService.signOut();
-    if (result.success) {
-      this.router.navigate(['/landing']);
-    }
-  }
-
-  get userDisplayName(): string {
-    if (!this.user) return 'User';
-    const firstName = this.user.user_metadata?.first_name;
-    const lastName = this.user.user_metadata?.last_name;
-    if (firstName && lastName) {
-      return `${firstName} ${lastName}`;
-    }
-    return this.user.email || 'User';
-  }
-
-  // Validator to ensure date is at least tomorrow
+  // Custom Validator
   futureDateValidator(control: any) {
     if (!control.value) return null;
     const selectedDate = new Date(control.value);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
-    // Check if less than tomorrow
+    // React code says: tomorrow or later. 
+    // "Events must be scheduled for tomorrow or later"
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     if (selectedDate < tomorrow) {
-      return { futureDate: true };
+      return { pastDate: true };
     }
     return null;
   }
 
-  get userRole(): string {
-    return this.user?.user_metadata?.role || 'User';
+  get minDate(): string {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
   }
 
-  get isAdmin(): boolean {
-    return this.authService.isAdmin;
+  // Steps Navigation
+  nextStep() {
+    if (this.currentStep < 4) {
+      // Basic validation per step
+      if (this.currentStep === 1) {
+        const fields = ['title', 'description', 'date', 'category'];
+        if (!this.validateFields(fields)) return;
+      } else if (this.currentStep === 2) {
+        if (!this.eventForm.get('location')?.valid) {
+          this.eventForm.get('location')?.markAsTouched();
+          return;
+        }
+      } else if (this.currentStep === 3) {
+        if (!this.eventForm.get('contactEmail')?.valid) {
+          this.eventForm.get('contactEmail')?.markAsTouched();
+          return;
+        }
+      }
+
+      this.currentStep++;
+    }
   }
+
+  prevStep() {
+    if (this.currentStep > 1) {
+      this.currentStep--;
+    }
+  }
+
+  validateFields(fieldNames: string[]): boolean {
+    let isValid = true;
+    fieldNames.forEach(field => {
+      const control = this.eventForm.get(field);
+      if (control && !control.valid) {
+        control.markAsTouched();
+        isValid = false;
+      }
+    });
+    return isValid;
+  }
+
+  // Tags
+  addTag(event: Event) {
+    event.preventDefault();
+    const input = this.eventForm.get('tagInput');
+    const value = input?.value?.trim();
+
+    if (value && !this.tags.includes(value)) {
+      this.tags.push(value);
+      input?.reset();
+    }
+  }
+
+  removeTag(tag: string) {
+    this.tags = this.tags.filter(t => t !== tag);
+  }
+
+  // Image Upload
+  onImageSelected(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      this.toastService.error('Invalid File', 'Please select a valid image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      this.toastService.error('File Too Large', 'Image size must be less than 5MB');
+      return;
+    }
+
+    this.imageFile = file;
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      this.imagePreview = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeImage() {
+    this.imageFile = null;
+    this.imagePreview = null;
+  }
+
+  // Submit
+  async onSubmit() {
+    if (!this.eventForm.valid) {
+      this.toastService.error('Validation Error', 'Please check all required fields.');
+      return;
+    }
+
+    this.loading = true;
+    try {
+      let imageUrl = null;
+
+      // Upload Image
+      if (this.imageFile && this.user) {
+        this.toastService.info('Uploading', 'Uploading event image...');
+        const { data, error } = await this.storageService.uploadEventImage(
+          this.imageFile,
+          this.user.id,
+          'temp'
+        );
+        if (error) throw error;
+        imageUrl = data!.publicUrl;
+      }
+
+      // Format Times
+      const formData = this.eventForm.value;
+
+      const formatTime = (h: string, m: string, p: string) => {
+        let hour = parseInt(h);
+        if (p === 'PM' && hour !== 12) hour += 12;
+        if (p === 'AM' && hour === 12) hour = 0;
+        return `${hour.toString().padStart(2, '0')}:${m}`;
+      };
+
+      const time = formatTime(formData.timeHour, formData.timeMinute, formData.timePeriod);
+      const endTime = formatTime(formData.endTimeHour, formData.endTimeMinute, formData.endTimePeriod);
+
+      const eventData: Partial<any> = {
+        user_id: this.user?.id,
+        title: formData.title,
+        description: formData.description,
+        date: formData.date,
+        time: time,
+        end_time: endTime,
+        location: formData.location,
+        max_participants: formData.maxParticipants ? parseInt(formData.maxParticipants) : undefined,
+        category: formData.category,
+        status: 'upcoming',
+        is_virtual: formData.isVirtual,
+        image_url: imageUrl || undefined
+      };
+
+      this.toastService.info('Creating Event', 'Please wait...');
+      const { error } = await this.eventsService.createEvent(eventData);
+
+      if (error) throw error;
+
+      this.toastService.success('Success', 'Event created successfully!');
+      setTimeout(() => {
+        this.router.navigate(['/events']);
+      }, 1500);
+
+    } catch (error: any) {
+      console.error('Error creating event:', error);
+      this.toastService.error('Error', error.message || 'Failed to create event');
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  // Helpers for Template
+  get f() { return this.eventForm.controls; }
 }

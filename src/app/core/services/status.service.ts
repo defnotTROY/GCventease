@@ -89,6 +89,56 @@ export class StatusService {
     }
 
     /**
+     * Auto-update all statuses for a user's events
+     */
+    async autoUpdateAllStatuses(userId: string): Promise<{ data: { updated: number } | null; error: any }> {
+        try {
+            if (!userId) {
+                throw new Error('User ID is required');
+            }
+
+            // 1. Fetch all events for the user
+            const { data: events, error: fetchError } = await this.supabase.client
+                .from('events')
+                .select('*')
+                .eq('user_id', userId);
+
+            if (fetchError) throw fetchError;
+            if (!events || events.length === 0) return { data: { updated: 0 }, error: null };
+
+            let updatedCount = 0;
+            const updates = [];
+
+            // 2. Check and update each event
+            for (const event of events) {
+                const currentStatus = event.status;
+                const calculatedStatus = this.calculateEventStatus(event);
+
+                if (currentStatus !== calculatedStatus && currentStatus !== 'cancelled') {
+                    // Update the event
+                    const updatePromise = this.supabase.client
+                        .from('events')
+                        .update({ status: calculatedStatus })
+                        .eq('id', event.id)
+                        .then(({ error }) => {
+                            if (!error) updatedCount++;
+                            return error;
+                        });
+                    updates.push(updatePromise);
+                }
+            }
+
+            // Wait for all updates to complete
+            await Promise.all(updates);
+
+            return { data: { updated: updatedCount }, error: null };
+        } catch (error) {
+            console.error('StatusService: Error auto-updating statuses:', error);
+            return { data: null, error };
+        }
+    }
+
+    /**
      * Update event status in database
      */
     async updateEventStatus(eventId: string, newStatus: string): Promise<{ data: any; error: any }> {
@@ -102,7 +152,7 @@ export class StatusService {
                 throw new Error('Invalid status provided');
             }
 
-            const user = await this.supabase.getCurrentUser();
+            const { user } = await this.supabase.getCurrentUser();
             if (!user) {
                 throw new Error('User not authenticated');
             }

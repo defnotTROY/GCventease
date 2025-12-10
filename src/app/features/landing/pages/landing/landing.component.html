@@ -1,0 +1,254 @@
+<div class="min-h-screen bg-white">
+    <!-- Navigation Bar -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <lucide-icon [img]="CalendarIcon" class="h-8 w-8 text-primary-600 mr-2"></lucide-icon>
+                    <span class="text-2xl font-bold text-gray-900">{{ config.institution.name }} EventEase</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a routerLink="/login"
+                        class="text-gray-700 hover:text-primary-600 px-4 py-2 font-medium transition-colors cursor-pointer">
+                        Sign In
+                    </a>
+                    <a routerLink="/signup"
+                        class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 font-medium transition-colors cursor-pointer">
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative bg-gradient-to-br from-primary-50 via-white to-primary-50 py-20 lg:py-32">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex justify-center mb-6">
+                    <div
+                        class="inline-flex items-center px-4 py-2 bg-primary-100 text-primary-700 rounded-full text-sm font-medium">
+                        <lucide-icon [img]="SparklesIcon" class="h-4 w-4 mr-2"></lucide-icon>
+                        Smart Event Management Platform
+                    </div>
+                </div>
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+                    Smart Event Management
+                    <br />
+                    <span class="text-primary-600">Made Simple</span>
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                    The official event management platform for {{ config.institution.name }}. Streamline your events,
+                    engage participants, and get powerful insights.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a routerLink="/signup"
+                        class="inline-flex items-center justify-center px-8 py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-semibold text-lg transition-all transform hover:scale-105 shadow-lg cursor-pointer">
+                        Get Started Now
+                        <lucide-icon [img]="ArrowRightIcon" class="ml-2 h-5 w-5"></lucide-icon>
+                    </a>
+                    <a routerLink="/login"
+                        class="inline-flex items-center justify-center px-8 py-4 bg-white text-primary-600 border-2 border-primary-600 rounded-lg hover:bg-primary-50 font-semibold text-lg transition-all cursor-pointer">
+                        Sign In
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    Everything You Need to Manage Events
+                </h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Powerful features designed to make event management effortless and efficient
+                </p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div *ngFor="let feature of features"
+                    class="p-6 bg-gray-50 rounded-xl hover:shadow-lg transition-all border border-gray-200 hover:border-primary-300">
+                    <div class="bg-primary-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                        <lucide-icon [img]="feature.icon" class="h-6 w-6 text-primary-600"></lucide-icon>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">
+                        {{ feature.title }}
+                    </h3>
+                    <p class="text-gray-600">
+                        {{ feature.description }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    How It Works
+                </h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Get started in minutes and transform how you manage events
+                </p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div *ngFor="let item of howItWorks; let i = index" class="relative">
+                    <div
+                        class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-all border border-gray-200 h-full">
+                        <div class="flex items-center mb-4">
+                            <div
+                                class="bg-primary-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg mr-3">
+                                {{ item.step }}
+                            </div>
+                            <lucide-icon [img]="item.icon" class="h-6 w-6 text-primary-600"></lucide-icon>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">
+                            {{ item.title }}
+                        </h3>
+                        <p class="text-gray-600">
+                            {{ item.description }}
+                        </p>
+                    </div>
+                    <div *ngIf="i < howItWorks.length - 1"
+                        class="hidden lg:block absolute top-1/2 -right-4 transform -translate-y-1/2 z-10">
+                        <lucide-icon [img]="ArrowRightIcon" class="h-6 w-6 text-gray-400"></lucide-icon>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    Why Choose {{ config.institution.name }} EventEase?
+                </h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Experience the difference with our comprehensive event management solution
+                </p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div *ngFor="let benefit of benefits" class="text-center">
+                    <div class="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <lucide-icon [img]="benefit.icon" class="h-8 w-8 text-primary-600"></lucide-icon>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">
+                        {{ benefit.title }}
+                    </h3>
+                    <p class="text-gray-600">
+                        {{ benefit.description }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Key Highlights Section -->
+    <section class="py-20 bg-gradient-to-br from-primary-600 to-primary-700 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="text-4xl font-bold mb-2">100%</div>
+                    <div class="text-primary-100">Secure & Verified</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl font-bold mb-2">Real-time</div>
+                    <div class="text-primary-100">Status Updates</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl font-bold mb-2">Easy</div>
+                    <div class="text-primary-100">QR Check-in</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 bg-white">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Ready to Transform Your Events?
+            </h2>
+            <p class="text-xl text-gray-600 mb-8">
+                Start managing your events today with {{ config.institution.name }} EventEase
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a routerLink="/signup"
+                    class="inline-flex items-center justify-center px-8 py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-semibold text-lg transition-all transform hover:scale-105 shadow-lg cursor-pointer">
+                    Get Started Free
+                    <lucide-icon [img]="ArrowRightIcon" class="ml-2 h-5 w-5"></lucide-icon>
+                </a>
+                <a routerLink="/login"
+                    class="inline-flex items-center justify-center px-8 py-4 bg-white text-primary-600 border-2 border-primary-600 rounded-lg hover:bg-primary-50 font-semibold text-lg transition-all cursor-pointer">
+                    Sign In to Your Account
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <lucide-icon [img]="CalendarIcon" class="h-6 w-6 text-primary-400 mr-2"></lucide-icon>
+                        <span class="text-xl font-bold">{{ config.institution.name }} EventEase</span>
+                    </div>
+                    <p class="text-gray-400 text-sm">
+                        The official event management platform for {{ config.institution.name }}.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Product</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a routerLink="/events" class="hover:text-white transition-colors cursor-pointer">Events</a>
+                        </li>
+                        <li><a routerLink="/analytics"
+                                class="hover:text-white transition-colors cursor-pointer">Analytics</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a routerLink="/login" class="hover:text-white transition-colors cursor-pointer">Sign In</a>
+                        </li>
+                        <li><a routerLink="/signup" class="hover:text-white transition-colors cursor-pointer">Sign
+                                Up</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Features</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li class="flex items-center">
+                            <lucide-icon [img]="CheckCircleIcon" class="h-4 w-4 mr-2 text-primary-400"></lucide-icon>
+                            QR Code Check-in
+                        </li>
+                        <li class="flex items-center">
+                            <lucide-icon [img]="CheckCircleIcon" class="h-4 w-4 mr-2 text-primary-400"></lucide-icon>
+                            User Verification
+                        </li>
+                        <li class="flex items-center">
+                            <lucide-icon [img]="CheckCircleIcon" class="h-4 w-4 mr-2 text-primary-400"></lucide-icon>
+                            Analytics Dashboard
+                        </li>
+                        <li class="flex items-center">
+                            <lucide-icon [img]="CheckCircleIcon" class="h-4 w-4 mr-2 text-primary-400"></lucide-icon>
+                            Auto Status Updates
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
+                <p>&copy; {{ currentYear }} {{ config.institution.name }}. All rights reserved.</p>
+                <p class="mt-2">Powered by EventEase</p>
+            </div>
+        </div>
+    </footer>
+</div>

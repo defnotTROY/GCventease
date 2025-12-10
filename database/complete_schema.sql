@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public.events (
     description TEXT,
     date DATE NOT NULL,
     time TIME NOT NULL,
+    end_time TIME,
     location TEXT,
     is_virtual BOOLEAN DEFAULT false,
     virtual_link TEXT,
@@ -124,10 +125,10 @@ CREATE POLICY "Users can delete their own events"
 CREATE POLICY "Users can view participants" 
     ON public.participants FOR SELECT 
     USING (
+        auth.uid() = user_id 
+        OR 
         auth.uid() IN (
             SELECT user_id FROM public.events WHERE id = event_id
-            UNION
-            SELECT user_id FROM public.participants WHERE event_id = participants.event_id
         )
     );
 

@@ -17,6 +17,10 @@ export interface Event {
     user_id: string;
     created_at: string;
     image_url?: string;
+    requirements?: string;
+    contact_email?: string;
+    contact_phone?: string;
+    tags?: string[];
 }
 
 @Injectable({
@@ -319,12 +323,20 @@ export class EventsService {
     }
 
     // Join event
-    async joinEvent(eventId: string, userId: string): Promise<{ error: any }> {
+    async joinEvent(eventId: string, userId: string, userDetails: { firstName: string; lastName: string; email: string }): Promise<{ error: any }> {
         try {
             const { error } = await this.supabase.client
                 .from('participants')
                 .insert([
-                    { event_id: eventId, user_id: userId, status: 'confirmed', registered_at: new Date().toISOString() }
+                    {
+                        event_id: eventId,
+                        user_id: userId,
+                        first_name: userDetails.firstName,
+                        last_name: userDetails.lastName,
+                        email: userDetails.email,
+                        status: 'confirmed',
+                        registration_date: new Date().toISOString()
+                    }
                 ]);
 
             if (error) throw error;
@@ -333,6 +345,15 @@ export class EventsService {
             console.error('Error joining event:', error);
             return { error };
         }
+    }
+
+    // Register for event (Alias/Adapter for joinEvent to match component usage)
+    async registerForEvent(eventId: string, data: { userId: string, firstName: string, lastName: string, email: string, phone?: string }): Promise<{ error: any }> {
+        return this.joinEvent(eventId, data.userId, {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email
+        });
     }
 
     // Check if user is registered
@@ -353,4 +374,87 @@ export class EventsService {
             return { isRegistered: false, error };
         }
     }
+    // Get available participant statuses from database
+    async getParticipantStatuses(): Promise<{ data: string[]; error: any }> {
+        try {
+            const { data: { user }, error: userError } = await this.supabase.client.auth.getUser();
+            if (userError || !user) throw new Error('User not authenticated');
+
+            // Get all events for the user
+            const { data: events, error: eventsError } = await this.supabase.client
+                .from('events')
+                .select('id')
+                .eq('user_id', user.id);
+
+            if (eventsError) throw eventsError;
+
+            if (!events || events.length === 0) {
+                return { data: ['all', 'registered', 'attended', 'cancelled'], error: null };
+            }
+
+            const eventIds = events.map(e => e.id);
+
+            // Get unique statuses from participants
+            const { data: participants, error: participantsError } = await this.supabase.client
+                .from('participants')
+                .select('status')
+                .in('event_id', eventIds);
+
+            if (participantsError) throw participantsError;
+
+            // Extract unique statuses
+            const uniqueStatuses = new Set<string>();
+            if (participants && participants.length > 0) {
+                participants.forEach(p => {
+                    if (p.status) {
+                        uniqueStatuses.add(p.status);
+                    }
+                });
+            }
+
+            // Default statuses if none found
+            const defaultStatuses = ['registered', 'attended', 'cancelled'];
+            const statusList = uniqueStatuses.size > 0
+                ? Array.from(uniqueStatuses).sort()
+                : defaultStatuses;
+
+            return { data: ['all', ...statusList], error: null };
+        } catch (error) {
+            console.error('Error fetching participant statuses:', error);
+            return { data: ['all', 'registered', 'attended', 'cancelled'], error };
+        }
+    }
+    // Update participant status for a specific event
+    async updateParticipantStatus(eventId: string, userId: string, status: string): Promise<{ error: any }> {
+        try {
+            const { error } = await this.supabase.client
+                .from('participants')
+                .update({ status: status })
+                .eq('event_id', eventId)
+                .eq('user_id', userId);
+
+            if (error) throw error;
+            return { error: null };
+        } catch (error) {
+            console.error('Error updating participant status:', error);
+            return { error };
+        }
+    }
+
+    // Update participant status by ID
+    async updateParticipantStatusById(participantId: string, status: string): Promise<{ error: any }> {
+        try {
+            const { error } = await this.supabase.client
+                .from('participants')
+                .update({ status: status })
+                .eq('id', participantId);
+
+            if (error) throw error;
+            return { error: null };
+        } catch (error) {
+            console.error('Error updating participant status by ID:', error);
+            return { error };
+        }
+    }
 }
+

@@ -94,7 +94,7 @@ export class VerificationService {
             }
 
             // Get current user info
-            const currentUser = await this.supabase.getCurrentUser();
+            const { user: currentUser } = await this.supabase.getCurrentUser();
             const userEmail = currentUser?.email || null;
             const userName = currentUser?.user_metadata?.first_name && currentUser?.user_metadata?.last_name
                 ? `${currentUser.user_metadata.first_name} ${currentUser.user_metadata.last_name}`
@@ -105,7 +105,7 @@ export class VerificationService {
             const fileName = `verifications/${userId}/${Date.now()}.${fileExt}`;
 
             const { data: uploadData, error: uploadError } = await this.supabase.client.storage
-                .from('verification-documents')
+                .from('events')
                 .upload(fileName, file, {
                     cacheControl: '3600',
                     upsert: false
@@ -115,7 +115,7 @@ export class VerificationService {
 
             // Get public URL
             const { data: { publicUrl } } = this.supabase.client.storage
-                .from('verification-documents')
+                .from('events')
                 .getPublicUrl(fileName);
 
             // Check if user already has a verification
@@ -281,7 +281,7 @@ export class VerificationService {
             // Delete file from storage
             if (verification.file_path) {
                 await this.supabase.client.storage
-                    .from('verification-documents')
+                    .from('events')
                     .remove([verification.file_path]);
             }
 

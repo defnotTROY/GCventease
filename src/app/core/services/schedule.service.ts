@@ -144,7 +144,7 @@ export class ScheduleService {
 
             // Filter active registrations
             const activeParticipants = participantEntries.filter((p: any) =>
-                !p.status || p.status === 'registered'
+                !p.status || p.status === 'registered' || p.status === 'confirmed'
             );
 
             console.log('✅ Active participant entries:', activeParticipants);
