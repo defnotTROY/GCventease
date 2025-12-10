@@ -1,0 +1,161 @@
+<div class="signup-container">
+    <div class="signup-card">
+        <!-- Logo and Header -->
+        <div class="signup-header">
+            <div class="logo">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+            </div>
+            <h1>Create Account</h1>
+            <p>Join GCventease with your Gordon College email</p>
+        </div>
+
+        <!-- Success Message -->
+        <div *ngIf="successMessage" class="success-alert">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                <path d="M8 12L11 15L16 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+            </svg>
+            <span>{{ successMessage }}</span>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="errorMessage" class="error-alert">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                <path d="M12 8V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                <circle cx="12" cy="16" r="1" fill="currentColor" />
+            </svg>
+            <span>{{ errorMessage }}</span>
+        </div>
+
+        <!-- Signup Form -->
+        <form [formGroup]="signupForm" (ngSubmit)="onSubmit()" class="signup-form">
+            <!-- Name Fields -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" formControlName="firstName" placeholder="Juan"
+                        [class.error]="firstName?.invalid && firstName?.touched" />
+                    <div *ngIf="firstName?.invalid && firstName?.touched" class="field-error">
+                        <span *ngIf="firstName?.errors?.['required']">First name is required</span>
+                        <span *ngIf="firstName?.errors?.['minlength']">At least 2 characters</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" formControlName="lastName" placeholder="Dela Cruz"
+                        [class.error]="lastName?.invalid && lastName?.touched" />
+                    <div *ngIf="lastName?.invalid && lastName?.touched" class="field-error">
+                        <span *ngIf="lastName?.errors?.['required']">Last name is required</span>
+                        <span *ngIf="lastName?.errors?.['minlength']">At least 2 characters</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Field -->
+            <div class="form-group">
+                <label for="email">Gordon College Email</label>
+                <input type="email" id="email" formControlName="email" placeholder="you@gordoncollege.edu.ph"
+                    [class.error]="email?.invalid && email?.touched" />
+                <div *ngIf="email?.invalid && email?.touched" class="field-error">
+                    <span *ngIf="email?.errors?.['required']">Email is required</span>
+                    <span *ngIf="email?.errors?.['email']">Please enter a valid email</span>
+                    <span *ngIf="email?.errors?.['gordonEmail']">Must use &#64;gordoncollege.edu.ph email</span>
+                </div>
+            </div>
+
+            <!-- Phone Field -->
+            <div class="form-group">
+                <label for="phone">Phone Number (Optional)</label>
+                <input type="tel" id="phone" formControlName="phone" placeholder="09123456789"
+                    [class.error]="phone?.invalid && phone?.touched" />
+                <div *ngIf="phone?.invalid && phone?.touched" class="field-error">
+                    <span *ngIf="phone?.errors?.['pattern']">Enter a valid 10-11 digit phone number</span>
+                </div>
+            </div>
+
+            <!-- Password Field -->
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-input">
+                    <input [type]="showPassword ? 'text' : 'password'" id="password" formControlName="password"
+                        placeholder="Create a strong password" [class.error]="password?.invalid && password?.touched" />
+                    <button type="button" class="toggle-password" (click)="togglePasswordVisibility()"
+                        aria-label="Toggle password visibility">
+                        <svg *ngIf="!showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor"
+                                stroke-width="2" />
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        <svg *ngIf="showPassword" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"
+                                stroke="currentColor" stroke-width="2" />
+                            <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                    </button>
+                </div>
+                <div *ngIf="password?.invalid && password?.touched" class="field-error">
+                    <span *ngIf="password?.errors?.['required']">Password is required</span>
+                    <span *ngIf="password?.errors?.['minlength']">At least 8 characters</span>
+                    <span *ngIf="password?.errors?.['passwordStrength']">Include uppercase, lowercase, and number</span>
+                </div>
+            </div>
+
+            <!-- Confirm Password Field -->
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <div class="password-input">
+                    <input [type]="showConfirmPassword ? 'text' : 'password'" id="confirmPassword"
+                        formControlName="confirmPassword" placeholder="Re-enter your password"
+                        [class.error]="(confirmPassword?.invalid && confirmPassword?.touched) || (signupForm.errors?.['passwordMismatch'] && confirmPassword?.touched)" />
+                    <button type="button" class="toggle-password" (click)="toggleConfirmPasswordVisibility()"
+                        aria-label="Toggle confirm password visibility">
+                        <svg *ngIf="!showConfirmPassword" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor"
+                                stroke-width="2" />
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        <svg *ngIf="showConfirmPassword" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"
+                                stroke="currentColor" stroke-width="2" />
+                            <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                    </button>
+                </div>
+                <div *ngIf="(confirmPassword?.invalid && confirmPassword?.touched) || (signupForm.errors?.['passwordMismatch'] && confirmPassword?.touched)"
+                    class="field-error">
+                    <span *ngIf="confirmPassword?.errors?.['required']">Please confirm your password</span>
+                    <span *ngIf="signupForm.errors?.['passwordMismatch']">Passwords do not match</span>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn-primary" [disabled]="isLoading">
+                <span *ngIf="!isLoading">Create Account</span>
+                <span *ngIf="isLoading" class="loading-spinner">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" opacity="0.25" />
+                        <path d="M12 2a10 10 0 0110 10" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+                    </svg>
+                    Creating account...
+                </span>
+            </button>
+        </form>
+
+        <!-- Login Link -->
+        <div class="login-link">
+            <p>Already have an account? <a routerLink="/login">Sign in</a></p>
+        </div>
+    </div>
+</div>

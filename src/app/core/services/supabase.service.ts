@@ -33,6 +33,11 @@ export class SupabaseService {
         this.initializeAuth();
     }
 
+    // Public getter for Supabase client
+    get client(): SupabaseClient {
+        return this.supabase;
+    }
+
     private async initializeAuth() {
         const { data: { session } } = await this.supabase.auth.getSession();
         if (session?.user) {
@@ -94,6 +99,10 @@ export class SupabaseService {
             data: updates
         });
         return { data, error };
+    }
+
+    async updateUserMetadata(metadata: any) {
+        return this.updateProfile(metadata);
     }
 
     async resendVerificationEmail() {
