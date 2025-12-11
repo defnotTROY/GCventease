@@ -1,0 +1,5 @@
+/* Custom styles for ticket visuals if needed */
+.qr-pattern {
+    background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+    background-size: 10px 10px;
+}

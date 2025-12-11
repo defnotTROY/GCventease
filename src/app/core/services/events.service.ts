@@ -456,5 +456,26 @@ export class EventsService {
             return { error };
         }
     }
+    // Get events user is registered for
+    async getUserRegistrations(userId: string): Promise<{ data: any[] | null; error: any }> {
+        try {
+            const { data, error } = await this.supabase.client
+                .from('participants')
+                .select(`
+                    id,
+                    status,
+                    events (
+                        *
+                    )
+                `)
+                .eq('user_id', userId);
+
+            if (error) throw error;
+            return { data, error: null };
+        } catch (error) {
+            console.error('Error fetching user registrations:', error);
+            return { data: null, error };
+        }
+    }
 }
 

@@ -66,6 +66,7 @@ export const routes: Routes = [
             { path: 'events/:id', loadComponent: EventViewComponent },
             { path: 'participants', loadComponent: ParticipantsComponent },
             { path: 'analytics', loadComponent: AnalyticsComponent },
+            { path: 'my-tickets', loadComponent: () => import('./features/events/pages/my-tickets/my-tickets.component').then(m => m.MyTicketsComponent) },
             { path: 'settings', loadComponent: () => import('./features/settings/pages/settings/settings.component').then(m => m.SettingsComponent) },
         ]
     },
